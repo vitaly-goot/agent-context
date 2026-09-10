@@ -19,8 +19,17 @@ cwd=/, LimitCORE=infinity (see [[host-safety-core-pattern]]).
 **Lost hosts (2026-09-10, while profiling under load with unwindpmp):**
 .69 (former orchestration/build host, NOT in this cluster) = no ping on 198.19/10.x
 -> hard down; the matching -dbg debs and build tree (build-classic-gcc13-debs)
-lived there. .68 = pings, its OSDs/mgr still serve, but sshd resets at
-kex_exchange_identification (cannot fork children: full root fs / mem / pids?).
-**Working from .70 now.** No SSH private key on .70 (bits.key was on .69);
-ssh to .71 -> publickey denied. /agent-context clone + /a/uwpmp on .70.
-.233 down for weeks; 198.18.140.7 unusable (no cluster net).
+lived there. .68 = pings, its 5 OSDs + the (only, no standby) active mgr still
+serve over the ceph wire, but sshd resets at kex_exchange_identification and
+mon.68 dropped out ~09-05 -> leading dx = **root fs (7.9 GB) full**, almost
+certainly a ceph-osd `core` dumped into / (see [[host-safety-core-pattern]]).
+Confirmed NOT an ssh-key problem (fleet.key kex-resets too). No remote shell/BMC
+path to clean it: ceph wire = admin only, local BMC has no IP, no BMC creds for
+.68. Needs console/physical to rm the core (0 OSD downtime) — a reboot won't
+delete a persistent core and drops the only mgr, so avoid.
+**Working from .70** (mon peon in quorum + osd.5-9). **SSH: user dropped
+/root/.ssh/id_rsa.ppk (actually an unencrypted OpenSSH key despite the name) ->
+copied to /root/.ssh/fleet.key (chmod 600); works as root on all reachable hosts:
+`ssh -i /root/.ssh/fleet.key root@<ip>`.** .232 is UP + healthy + reachable
+(osd.40-44) — the old "permanent loss" note is stale. .233 not tested (not a
+client); 198.18.140.7 unusable (no cluster net). /agent-context + /a/uwpmp on .70.
