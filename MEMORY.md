@@ -11,6 +11,7 @@ One line per fact. Read this first, then open the relevant `memory/*.md`.
 ## Reference (infra, build, repo)
 - [test-cluster-infra](memory/test-cluster-infra.md) — LIVE cluster 8f7cb5d2 (2026-09-03, 9 hosts/45 OSDs, host->osd map, pools, build-id), hosts .69/.68 lost 2026-09-10, no ssh key on .70.
 - [host-safety-core-pattern](memory/host-safety-core-pattern.md) — core_pattern=core + LimitCORE=infinity + cwd=/ + 7.9 GB root: one OSD core fills root and wedges the host; point cores at ZFS first.
+- [classic-deb-build-on-70](memory/classic-deb-build-on-70.md) — rebuilding symbol-matched classic ceph-osd debs on .70: docker data-root on ZFS, --network=host, boost slow-mirror fix, make-dist skip via stashed tarball, ccache at /a/ccache (redis off; never CCACHE_REMOTE_ONLY=false).
 - [crimson-deb-build-gotchas](memory/crimson-deb-build-gotchas.md) — build-with-container.py gotchas (WITH_CRIMSON truthiness, image network, classic vs crimson).
 - [ceph-repo-and-docs](memory/ceph-repo-and-docs.md) — /a/ceph branch, the two benchmark docs, HEAD/author state, boot-fix PR #69972, force-push needed.
 
