@@ -2,27 +2,30 @@
 name: unwindpmp-profiling
 type: project
 ---
-**Wall-clock profiling of ceph-osd with unwindpmp (markhpc/uwpmp, /a/uwpmp,
-binary /a/uwpmp/build/unwindpmp, built 2026-09-10 on .70, commit 2758308).**
-Usage: `unwindpmp -p PID -n SAMPLES [-s ms] [-v inverted] [-t thresh] [-b libunwind|libdw] [-j jobs]`.
-- libunwind backend (default) attaches ONE THREAD AT A TIME (PTRACE_ATTACH ->
-  waitpid -> unw_step loop -> PTRACE_DETACH); the OSD is never fully frozen.
-  `-j` only applies to libdw. `-b libdw` hangs >10 min per sample on ceph-osd.
-- Symbols: libunwind resolves separate debug info only through .gnu_debuglink,
-  searching <bindir>/, <bindir>/.debug/, /usr/lib/debug/<bindir>/<link name>;
-  no build-id lookup. Recipe: extract ceph-osd-dbg + ceph-base-dbg debs to
-  /a/agent-scratchpad/profiling/dbg/usr/lib/debug, symlink /usr/lib/debug there,
-  and link each mapped file's debuglink name -> .build-id/xx/yyyy.debug.
-  The dbg debs MUST match the running build-id (readelf -n /usr/bin/ceph-osd).
-  On .70 no -dbg deb matches (08f015eb); debs on .70: /root/debs-new = 08f015eb
-  (installed), /root/debs-classic = d1849e73, /root/debs202 = 32138a07.
-- Robustness bugs (src/tracer/unwind_tracer.cc): `waitpid(tid,NULL,0)` on a
-  non-leader thread returns ECHILD at once (needs __WALL) so unwinding races the
-  stop -> ESRCH -> die(); every die() exits WITHOUT PTRACE_DETACH; no SIGINT
-  handler, no per-thread timeout. Bigger risk under load than idle.
-- 2026-09-10: hosts .69 and .68 were lost during "profile under load" attempts
-  (root cause not established from .70; see [[host-safety-core-pattern]] for the
-  root-fs-fill path). Next attempt rule: single probe (`-n 1`), libunwind, run
-  under `timeout` + `systemd-run -p MemoryMax=`, core_pattern on ZFS, watch OSD
-  thread states for `T` afterwards, and prefer an OSD on a host that can be lost
-  rather than the working host.
+**unwindpmp (markhpc/uwpmp) was BROKEN for non-interactive use; fixed 2026-09-11
+in /a/uwpmp (local commit 22967f0). Three real defects:**
+1. **"Thread headers but blank frames" is NOT a symbolization problem.**
+   `UwpmpCtx` ignored `ioctl(TIOCGWINSZ)`'s return, so when stdout is not a TTY
+   (redirect/pipe/agent harness) `ws_col==0` -> `max_width=0` -> `fprint()` does
+   `line.substr(0, 0)` -> EVERY frame line prints as "". Thread headers survive
+   because `UwpmpThread::print()` uses std::cout directly. **This is why it
+   "works on Ubuntu 22" (run in a terminal) and looks broken from a script — it
+   is TTY vs non-TTY, NOT a distro/u24 issue.** Workaround on an unpatched
+   binary: always pass `-w 200`.
+2. `waitpid(tid, NULL, 0)` lacked `__WALL`. Threads are CLONE_THREAD tasks, so
+   waitpid returns ECHILD immediately instead of waiting for the ptrace-stop;
+   unwindpmp then unwinds a NOT-yet-stopped thread -> garbage frames and
+   **SIGSEGV** on busy many-threaded targets (ceph-osd, ~1000 threads). Timing
+   dependent, which is why it can appear to work on smaller/slower systems.
+3. Every `die()` between PTRACE_ATTACH and PTRACE_DETACH exited WITHOUT
+   detaching -> tracee threads can be left in group-stop (T) forever = a frozen
+   OSD. Fixed: never die() in trace_tid, detach+skip on any error.
+Also now checks `unw_get_proc_name()` and falls back to the raw pc, so unwind
+failures are distinguishable from symbol failures.
+**Verified**: on a 200-thread test target, full symbolized call graphs, exit 0,
+0 stranded T threads. Binary: /a/uwpmp/build/unwindpmp (original kept as
+unwindpmp.orig); build tree /a/uwpmp/build-fix. Build needs libelf-dev+libdw-dev
+— build it inside the ceph-build container (no gcc on the hosts).
+Symbols DO still require a build-id-matched -dbg (see [[classic-deb-build-on-70]]),
+extracted to ZFS and linked via .gnu_debuglink — see setup_symbols.sh in
+/a/agent-scratchpad/profiling/. libunwind resolves ONLY via .gnu_debuglink.
