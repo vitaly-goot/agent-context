@@ -17,6 +17,7 @@ One line per fact. Read this first, then open the relevant `memory/*.md`.
 
 ## EC benchmark + OSD profiling
 - [ec43-load-setup](memory/ec43-load-setup.md) — the EC 4+3 A/B load setup: h0..h8 images (b43/o43/i43), p3_client_fio.sh recipe, last mix4k_w70 numbers, images still mapped.
+- [ec43-knee-and-bottleneck](memory/ec43-knee-and-bottleneck.md) — EC 4+3 4k-randwrite knee = nj4/131k IOPS; NOT cpu/device/net bound; ~9.5ms of 10.3ms op latency is EC partial-stripe RMW; 16k full-stripe = 75x fewer reads, 3.4x bandwidth.
 - [ec43-osd-profile-2026-09-11](memory/ec43-osd-profile-2026-09-11.md) — the actual EC 4+3 OSD profile: EC encode only 3.3%; RocksDB memtable + bufferlist copies + allocator dominate; ~85% of threads parked.
 - [offline-symbolization-method](memory/offline-symbolization-method.md) — never read big .debug in-process on a fleet host (wedges sshd); capture raw PCs + maps, symbolize offline in a container.
 - [profiling-incident-2026-09-11](memory/profiling-incident-2026-09-11.md) — profiling wedged .71; the "22 OSDs down" was a STALE OSDMAP from a mon write-stall caused by 5.47s clock skew; fleet NTP points at the dead .69.
