@@ -18,6 +18,7 @@ One line per fact. Read this first, then open the relevant `memory/*.md`.
 ## EC benchmark + OSD profiling
 - [ec43-load-setup](memory/ec43-load-setup.md) — the EC 4+3 A/B load setup: h0..h8 images (b43/o43/i43), p3_client_fio.sh recipe, last mix4k_w70 numbers, images still mapped.
 - [ec-optimizations-ab-result](memory/ec-optimizations-ab-result.md) — fast-EC A/B: ec_optimizations = +29% IOPS on 4k partial-stripe writes, via 33% less write amplification (not fewer RMW reads).
+- [ec43-alignment-curve](memory/ec43-alignment-curve.md) — 4k/8k/16k/32k/64k aligned-write curve: device reads hit exactly 0 at the 16 KB full stripe; 8 KB already gives 1.8x; app-batching break-even is only ~1.1-1.2 updates/block.
 - [ec43-knee-and-bottleneck](memory/ec43-knee-and-bottleneck.md) — EC 4+3 4k-randwrite knee = nj4/131k IOPS; NOT cpu/device/net bound; ~9.5ms of 10.3ms op latency is EC partial-stripe RMW; 16k full-stripe = 75x fewer reads, 3.4x bandwidth.
 - [ec43-osd-profile-2026-09-11](memory/ec43-osd-profile-2026-09-11.md) — the actual EC 4+3 OSD profile: EC encode only 3.3%; RocksDB memtable + bufferlist copies + allocator dominate; ~85% of threads parked.
 - [offline-symbolization-method](memory/offline-symbolization-method.md) — never read big .debug in-process on a fleet host (wedges sshd); capture raw PCs + maps, symbolize offline in a container.
