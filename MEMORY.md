@@ -18,6 +18,7 @@ One line per fact. Read this first, then open the relevant `memory/*.md`.
 ## EC benchmark + OSD profiling
 - [ec43-load-setup](memory/ec43-load-setup.md) — the EC 4+3 A/B load setup: h0..h8 images (b43/o43/i43), p3_client_fio.sh recipe, last mix4k_w70 numbers, images still mapped.
 - [ec-optimizations-ab-result](memory/ec-optimizations-ab-result.md) — fast-EC A/B: ec_optimizations = +29% IOPS on 4k partial-stripe writes, via 33% less write amplification (not fewer RMW reads).
+- [ec-extent-cache-not-the-lever](memory/ec-extent-cache-not-the-lever.md) — 18x bigger EC extent cache = -1.7% reads (noise); one-OSD-vs-same-host-controls method; lowers the case for a durable EC journal.
 - [bluestore-deferred-writes-negative](memory/bluestore-deferred-writes-negative.md) — deferred writes tested on EC 4+3 small writes: -13.1% IOPS, amplification 15.9x->20.2x. Negative result; don't re-try.
 - [ec43-alignment-curve](memory/ec43-alignment-curve.md) — 4k/8k/16k/32k/64k aligned-write curve: device reads hit exactly 0 at the 16 KB full stripe; 8 KB already gives 1.8x; app-batching break-even is only ~1.1-1.2 updates/block.
 - [ec43-knee-and-bottleneck](memory/ec43-knee-and-bottleneck.md) — EC 4+3 4k-randwrite knee = nj4/131k IOPS; NOT cpu/device/net bound; ~9.5ms of 10.3ms op latency is EC partial-stripe RMW; 16k full-stripe = 75x fewer reads, 3.4x bandwidth.
