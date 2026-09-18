@@ -2,6 +2,12 @@
 
 One line per fact. Read this first, then open the relevant `memory/*.md`.
 
+## ACTIVE HANDOFF — EC journal / log-structured prototype
+- [ec-journal-prototype-handoff](memory/ec-journal-prototype-handoff.md) — **START HERE.** Goal, the gate that decides whether to build at all, design sketch, 2-4 engineer-quarter estimate, and the negative results not to re-litigate.
+- [ec-write-path-code-map](memory/ec-write-path-code-map.md) — where the EC write path lives: ECSwitch (legacy vs optimized), ECTransaction RMW/PDW decision, ECExtentCache (the thing to make durable), plugin capability flags, and what does NOT exist.
+- [ec-capacity-efficiency-constraints](memory/ec-capacity-efficiency-constraints.md) — 90% efficiency + 22 hosts => 18+2, which makes the full stripe 72 KiB and the journal far more valuable; 90% *sellable* is arithmetically impossible; the IOPS-per-usable-TB conflict.
+- [measurement-harness](memory/measurement-harness.md) — the working benchmark/profiling scripts in /a/agent-scratchpad/profiling/ and the method rules (quiesce first, aqu-sz not %util, one-OSD-vs-same-host controls).
+
 ## Project findings (crimson/SeaStore evaluation)
 - [crimson-replicated-no-stable-layout](memory/crimson-replicated-no-stable-layout.md) — is there a stable crimson/SeaStore layout for replicated (size=5) writes? NO — every layout crashes an OSD in 1-4 min via 2 upstream `ceph_abort` paths (unfixed in v21.3.0); memory solvable, stability not.
 - [crimson-vs-bluestore-baseline](memory/crimson-vs-bluestore-baseline.md) — classic BlueStore on same HW: 105k IOPS sustained 25 min, 0 crashes vs crimson ~40k-then-crash → no performance case for crimson today.
@@ -9,7 +15,7 @@ One line per fact. Read this first, then open the relevant `memory/*.md`.
 - [seastore-memory-sizing](memory/seastore-memory-sizing.md) — crimson `--memory` is a PER-SHARD cap (`--memory/reactors`); size >= ~10-12 GB/reactor or it OOMs (self-abort with RAM free).
 
 ## Reference (infra, build, repo)
-- [test-cluster-infra](memory/test-cluster-infra.md) — LIVE cluster 8f7cb5d2 (2026-09-03, 9 hosts/45 OSDs, host->osd map, pools, build-id), hosts .69/.68 lost 2026-09-10, no ssh key on .70.
+- [test-cluster-infra](memory/test-cluster-infra.md) — LIVE cluster 8f7cb5d2 (9 hosts/45 OSDs, host->osd map, pools, build-id); **3 hosts wedged (.68/.71/.232) with no console, only 4 usable load clients, single mgr, 2-of-3 quorum**; ssh via /root/.ssh/fleet.key.
 - [host-safety-core-pattern](memory/host-safety-core-pattern.md) — core_pattern=core + LimitCORE=infinity + cwd=/ + 7.9 GB root: one OSD core fills root and wedges the host; point cores at ZFS first.
 - [classic-deb-build-on-70](memory/classic-deb-build-on-70.md) — rebuilding symbol-matched classic ceph-osd debs on .70: docker data-root on ZFS, --network=host, boost slow-mirror fix, make-dist skip via stashed tarball, ccache at /a/ccache (redis off; never CCACHE_REMOTE_ONLY=false).
 - [crimson-deb-build-gotchas](memory/crimson-deb-build-gotchas.md) — build-with-container.py gotchas (WITH_CRIMSON truthiness, image network, classic vs crimson).

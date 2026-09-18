@@ -16,20 +16,26 @@ ec43_opt_isa(5) rep5(6). OSD unit: /usr/bin/ceph-osd -f --id N, runs as root,
 cwd=/, LimitCORE=infinity (see [[host-safety-core-pattern]]).
 **Each host:** AMD EPYC 7643 48c/96t, 251 GB RAM + 251 GB swap, 5x Micron 7400
 1.7 TB, root fs 7.9 GB (tiny), ZFS tank/ula at /usr/local/akamai (= /a, ~470 GB).
-**Lost hosts (2026-09-10, while profiling under load with unwindpmp):**
-.69 (former orchestration/build host, NOT in this cluster) = no ping on 198.19/10.x
--> hard down; the matching -dbg debs and build tree (build-classic-gcc13-debs)
-lived there. .68 = pings, its 5 OSDs + the (only, no standby) active mgr still
-serve over the ceph wire, but sshd resets at kex_exchange_identification and
-mon.68 dropped out ~09-05 -> leading dx = **root fs (7.9 GB) full**, almost
-certainly a ceph-osd `core` dumped into / (see [[host-safety-core-pattern]]).
-Confirmed NOT an ssh-key problem (fleet.key kex-resets too). No remote shell/BMC
-path to clean it: ceph wire = admin only, local BMC has no IP, no BMC creds for
-.68. Needs console/physical to rm the core (0 OSD downtime) — a reboot won't
-delete a persistent core and drops the only mgr, so avoid.
-**Working from .70** (mon peon in quorum + osd.5-9). **SSH: user dropped
-/root/.ssh/id_rsa.ppk (actually an unencrypted OpenSSH key despite the name) ->
-copied to /root/.ssh/fleet.key (chmod 600); works as root on all reachable hosts:
-`ssh -i /root/.ssh/fleet.key root@<ip>`.** .232 is UP + healthy + reachable
-(osd.40-44) — the old "permanent loss" note is stale. .233 not tested (not a
-client); 198.18.140.7 unusable (no cluster net). /agent-context + /a/uwpmp on .70.
+**WEDGED HOSTS (as of 2026-09-18) — 3 of 9, no console/BMC access:**
+`.68` (osd.0-4 + **the only mgr** + a mon that is out of quorum), `.71`
+(osd.11-14 up, **osd.10 down and unstartable**), `.232` (osd.40-44).
+All three **ping fine and their OSDs serve normally** — the wedge only breaks
+*new process creation*, so sshd dies at `kex_exchange_identification` while
+already-running daemons are unaffected. Cluster reads 44/45 up, all PGs clean.
+**Cause: unwindpmp reading the ~2 GB ceph-osd .debug file IN-PROCESS exhausts
+memory -> fork() fails.** NOT core dumps (that theory was wrong). Proven by A/B on
+.232: 100 probes WITHOUT debug symbols ran clean; 1 probe WITH them wedged the host
+instantly. The offline path now makes this impossible — see
+[[offline-symbolization-method]]. Recovery needs a console/BMC power-cycle; nothing
+on disk is damaged. `.69` is gone for good (no ping) and was the fleet's only NTP
+server — all hosts free-run and drift, which caused a mon paxos write-stall once
+(see [[profiling-incident-2026-09-11]]).
+**Consequences to plan around:** only **4 usable load clients** (.72/.229/.230/.231;
+.70/.228 are mons and were excluded out of caution — they can probably be used,
+fio pins to cores 48-95); single mgr on an unadministerable host; 2-of-3 mon quorum,
+so losing .70 or .228 loses quorum entirely.
+**SSH:** `ssh -i /root/.ssh/fleet.key root@<ip>` works on all reachable hosts
+(the user-supplied `/root/.ssh/id_rsa.ppk` was an OpenSSH key despite the name).
+`.233` untested; 198.18.140.7 reachable (8c/31GB, 5 unused 384G SATA SSDs — wrong
+class for NVMe benchmarking, but a fine home for Prometheus/Grafana, which are
+installed nowhere today).
