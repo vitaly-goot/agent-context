@@ -1,3 +1,26 @@
+> **NEW AGENT: START HERE.**
+>
+> **Your assignment:** prototype a durable write-coalescing journal
+> ("log-structured machinery") in Ceph's EC backend, to remove the partial-stripe
+> read-modify-write penalty on small writes.
+> Read **[memory/ec-journal-prototype-handoff.md](memory/ec-journal-prototype-handoff.md)**
+> before anything else — it opens with a *gate* that may tell you not to build this
+> at all, and lists measured dead ends so you do not repeat them.
+>
+> **Bootstrap facts you will need in the first five minutes:**
+> - Work from **198.19.34.70**. Ceph fork `/a/ceph` (= /usr/local/akamai/ceph,
+>   branch build/toolchain-selection-20.2.2); scripts `/a/agent-scratchpad/profiling/`;
+>   this repo `/agent-context`.
+> - Fleet ssh: `ssh -i /root/.ssh/fleet.key root@<ip>`.
+> - **Every ceph command must bypass the wedged mgr**, or it hangs:
+>   `ceph -m 198.19.32.228,198.19.34.70 ...`
+> - **3 of 9 hosts are wedged** (.68 .71 .232) with no console. Their OSDs still
+>   serve; you have only 4 usable load clients. See [[test-cluster-infra]].
+> - **Two rules that cost us three hosts and a ruined dataset:** never let a
+>   profiler read debug symbols on a target host ([[offline-symbolization-method]]),
+>   and always quiesce recovery+scrub and verify a 0-reads idle baseline before
+>   measuring ([[measurement-harness]]).
+
 # Memory index
 
 One line per fact. Read this first, then open the relevant `memory/*.md`.

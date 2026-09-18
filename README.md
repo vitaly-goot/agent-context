@@ -4,7 +4,10 @@ Persistent, git-backed context for agent sessions on this project
 (crimson/SeaStore evaluation + Ceph fleet work).
 
 ## How to use
-1. **Read `MEMORY.md` first** — the index, one line per fact.
+1. **Read `MEMORY.md` first.** It opens with the **active assignment** for a new
+   agent, the bootstrap facts (which host, which ssh key, the mgr bypass), and the
+   two safety rules that have already cost this project three machines. Below that
+   it is an index, one line per fact.
 2. Open the relevant `memory/*.md` files for detail.
 3. Full narrative writeup: `crimson-seastore-vs-bluestore-eval.md`.
 
